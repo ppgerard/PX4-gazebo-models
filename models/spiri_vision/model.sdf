@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sdf version='1.9'>
+  <model name='spiri_vision'>
+    <pose>0 0 0 0 0 0</pose>
+    <include merge='true'>
+      <uri>spiri</uri>
+    </include>
+    <include merge='true'>
+      <uri>camera_spiri</uri>
+      <!-- 0.042 = nickel -->
+      <pose relative_to="base_link">0 0 0 0 0 0</pose>
+    </include>
+    <joint name="CameraJoint" type="fixed">
+      <parent>base_link</parent>
+      <child>camera_spiri/base_link</child>
+      <pose relative_to="base_link">0 0 0 0 0 0</pose>
+    </joint>
+  </model>
+</sdf>

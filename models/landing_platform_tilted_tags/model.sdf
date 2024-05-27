@@ -1,0 +1,77 @@
+<?xml version='1.0'?>
+<sdf version='1.9'>
+  <model name='tag01'>
+
+  <plugin
+      filename="gz-sim-odometry-publisher-system"
+      name="gz::sim::systems::OdometryPublisher">
+      <dimensions>3</dimensions>
+  </plugin>
+  
+  <static>true</static>
+    <link name='main'>
+      <pose>0 0 0.1 0 0 0</pose>
+      <collision name="collision">
+        <geometry>
+            <box>
+              <size>0.92 0.92 0.2</size> 
+              <!-- ATTENTION changé d 0.2 à 0.8 pour tests -->
+            </box>
+        </geometry>
+      </collision>
+
+      <visual name='visual'>
+          <pose>0 0 0 0 0 0</pose>
+          <geometry>
+            <box>
+              <size>0.92 0.92 0.2</size>
+            </box>
+        </geometry>
+	    </visual>
+
+      <!-- <visual name='tag_00'>
+          <pose>0.65 0 0.3 0 -1.05 0</pose>
+          <geometry>
+            <mesh>
+                <scale>0.25 0.25 0.01</scale>
+                <uri>model://landing_platform/meshes/tag_01.dae</uri>
+            </mesh>
+          </geometry>
+	    </visual> -->
+
+      <visual name='tag_00'>
+          <!-- <pose>0.65 0 0.3 0 -1.57 0</pose> -->
+          <pose>0.50 0.28 0.3 1.05 0 -1.57</pose>
+          <!-- <pose>0.65 0 0.3 1.57 0 -1.57</pose> -->
+          
+          <geometry>
+            <mesh>
+                <scale>0.2 0.2 0</scale>
+                <uri>model://landing_platform_vertical_tags/meshes/tag_00.dae</uri>
+            </mesh>
+          </geometry>
+	    </visual>
+
+      <visual name='tag_01'>
+          <pose>0.50 0 0.21 1.05 0 -1.57</pose>
+          <geometry>
+            <mesh>
+                <scale>0.10 0.10 0.01</scale>
+                <uri>model://landing_platform_vertical_tags/meshes/tag_01.dae</uri>
+            </mesh>
+          </geometry>
+	    </visual>
+
+      <!-- <sensor name="navsat" type="navsat">
+        <pose>0 0 0 0 0 0</pose>
+			  <always_on>1</always_on>
+			  <update_rate>1</update_rate>
+        <topic>navsat</topic>
+      </sensor>  -->
+
+     </link>
+
+    
+    
+  </model>
+</sdf>
