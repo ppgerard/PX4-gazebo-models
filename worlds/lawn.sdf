@@ -98,7 +98,7 @@
         <falloff>0</falloff>
       </spot>
     </light>
-    <light type="directional" name="sun_2">
+    <!-- <light type="directional" name="sun_2">
       <cast_shadows>true</cast_shadows>
       <pose>200 200 200 0 0 0</pose>
       <diffuse>0.5 0.5 0.5 0.3</diffuse>
@@ -110,7 +110,7 @@
         <quadratic>0</quadratic>
       </attenuation>
       <direction>0.01 0.01 -0.9</direction>
-    </light>
+    </light> -->
     <spherical_coordinates>
       <surface_model>EARTH_WGS84</surface_model>
       <world_frame_orientation>ENU</world_frame_orientation>
