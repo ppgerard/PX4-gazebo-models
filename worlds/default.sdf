@@ -91,91 +91,24 @@
       <elevation>0</elevation>
     </spherical_coordinates>
 
-    <!-- People cylinders (converted from NED to ENU):
-         NED [x_north, y_east, z_down] -> ENU [x_east, y_north, z_up]
-         Height = 2.0 m, Radius = 0.35 m. Pose z set to height/2 so they rest on ground. -->
-    <model name="person_cylinder_1">
-      <static>true</static>
-      <pose>1.0 5.0 1.0 0 0 0</pose> <!-- ENU from NED [5, 1, 0] -->
-      <link name="link">
-        <collision name="collision">
-          <geometry>
-            <cylinder>
-              <radius>0.35</radius>
-              <length>2.0</length>
-            </cylinder>
-          </geometry>
-        </collision>
-        <visual name="visual">
-          <geometry>
-            <cylinder>
-              <radius>0.35</radius>
-              <length>2.0</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>0.8 0.2 0.2 1</ambient>
-            <diffuse>0.8 0.2 0.2 1</diffuse>
-            <specular>0.2 0.2 0.2 1</specular>
-          </material>
-        </visual>
-      </link>
-    </model>
+    <!-- People  (converted from NED to ENU):
+         NED [x_north, y_east, z_down] -> ENU [x_east, y_north, z_up] -->
+    <include>
+      <uri>model://person_standing</uri>
+      <name>person_standing_1</name>
+      <pose>1.0 5.0 0 0 0 0</pose> <!-- from person_cylinder_1 -->
+    </include>
 
-    <model name="person_cylinder_2">
-      <static>true</static>
-      <pose>-1.5 10.0 1.0 0 0 0</pose> <!-- ENU from NED [10, -1.5, 0] -->
-      <link name="link">
-        <collision name="collision">
-          <geometry>
-            <cylinder>
-              <radius>0.35</radius>
-              <length>2.0</length>
-            </cylinder>
-          </geometry>
-        </collision>
-        <visual name="visual">
-          <geometry>
-            <cylinder>
-              <radius>0.35</radius>
-              <length>2.0</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>0.2 0.8 0.2 1</ambient>
-            <diffuse>0.2 0.8 0.2 1</diffuse>
-            <specular>0.2 0.2 0.2 1</specular>
-          </material>
-        </visual>
-      </link>
-    </model>
+    <include>
+      <uri>model://person_standing</uri>
+      <name>person_standing_2</name>
+      <pose>-1.5 10.0 0 0 0 0</pose> <!-- from person_cylinder_2 -->
+    </include>
 
-    <model name="person_cylinder_3">
-      <static>true</static>
-      <pose>2.5 15.0 1.0 0 0 0</pose> <!-- ENU from NED [15, 2.5, 0] -->
-      <link name="link">
-        <collision name="collision">
-          <geometry>
-            <cylinder>
-              <radius>0.35</radius>
-              <length>2.0</length>
-            </cylinder>
-          </geometry>
-        </collision>
-        <visual name="visual">
-          <geometry>
-            <cylinder>
-              <radius>0.35</radius>
-              <length>2.0</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>0.2 0.2 0.8 1</ambient>
-            <diffuse>0.2 0.2 0.8 1</diffuse>
-            <specular>0.2 0.2 0.2 1</specular>
-          </material>
-        </visual>
-      </link>
-    </model>
+    <include>
+      <uri>model://person_standing</uri>
+      <name>person_standing_3</name>
+      <pose>2.5 15.0 0 0 0 0</pose> <!-- from person_cylinder_3 -->
+    </include>
   </world>
 </sdf>
