@@ -83,6 +83,59 @@
         <falloff>0</falloff>
       </spot>
     </light>
+    <!-- Mean wind vector in the world (ENU) frame [m/s].
+         Set the magnitude here; the WindEffects plugin below adds the gusts.
+         Suggested robustness sweep: 0, 3, 5, 8 m/s, and rotate the direction
+         (e.g. "0 5 0", "3.5 3.5 0") to test cross-wind vs head-wind landings. -->
+    <wind>
+      <linear_velocity>5 0 0</linear_velocity>
+    </wind>
+
+    <!-- NOTE: once a world declares any <plugin>, Gazebo stops loading the
+         default server.config plugin set, so the full list must be declared
+         here. Copied from worlds/windy.sdf, plus WindEffects. -->
+    <plugin filename="gz-sim-physics-system" name="gz::sim::systems::Physics"/>
+    <plugin filename="gz-sim-user-commands-system" name="gz::sim::systems::UserCommands"/>
+    <plugin filename="gz-sim-scene-broadcaster-system" name="gz::sim::systems::SceneBroadcaster"/>
+    <plugin name="gz::sim::systems::Contact" filename="gz-sim-contact-system"/>
+    <plugin name="gz::sim::systems::Imu" filename="gz-sim-imu-system"/>
+    <plugin name="gz::sim::systems::Magnetometer" filename="gz-sim-magnetometer-system"/>
+    <plugin name="gz::sim::systems::AirPressure" filename="gz-sim-air-pressure-system"/>
+    <plugin name="gz::sim::systems::AirSpeed" filename="gz-sim-air-speed-system"/>
+    <plugin name="gz::sim::systems::ApplyLinkWrench" filename="gz-sim-apply-link-wrench-system"/>
+    <plugin name="gz::sim::systems::NavSat" filename="gz-sim-navsat-system"/>
+    <plugin filename="gz-sim-sensors-system" name="gz::sim::systems::Sensors">
+      <render_engine>ogre2</render_engine>
+    </plugin>
+
+    <!-- Gusts. The magnitude is modulated as mean * (1 + amplitude_percent*sin(2*pi*t/period))
+         plus Gaussian noise, and the direction is perturbed likewise.
+         Defaults below: 5 m/s mean, +-40% gusts (3..7 m/s) on an 8 s period,
+         with a slowly wandering direction. For a harsher case use
+         amplitude_percent 0.9 and period 4 (as in windy.sdf).
+         force_approximation_scaling_factor scales the bluff-body drag
+         (F ~= factor * mass * (v_wind - v_link)); windy.sdf uses 0.01, which is
+         nearly negligible. The dominant wind path for the T2 is the LiftDrag on
+         base_link, which only sees wind if base_link has <enable_wind>true. -->
+    <plugin name="gz::sim::systems::WindEffects" filename="gz-sim-wind-effects-system">
+      <force_approximation_scaling_factor>0.1</force_approximation_scaling_factor>
+      <horizontal>
+        <magnitude>
+          <time_for_rise>2</time_for_rise>
+          <sin><amplitude_percent>0.4</amplitude_percent><period>8</period></sin>
+          <noise type='gaussian'><mean>0</mean><stddev>0.05</stddev></noise>
+        </magnitude>
+        <direction>
+          <time_for_rise>2</time_for_rise>
+          <sin><amplitude>10</amplitude><period>15</period></sin>
+          <noise type='gaussian'><mean>0</mean><stddev>0.05</stddev></noise>
+        </direction>
+      </horizontal>
+      <vertical>
+        <noise type='gaussian'><mean>0</mean><stddev>0.1</stddev></noise>
+      </vertical>
+    </plugin>
+
     <spherical_coordinates>
       <surface_model>EARTH_WGS84</surface_model>
       <world_frame_orientation>ENU</world_frame_orientation>
