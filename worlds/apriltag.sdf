@@ -113,12 +113,20 @@
          Defaults below: 5 m/s mean, +-40% gusts (3..7 m/s) on an 8 s period,
          with a slowly wandering direction. For a harsher case use
          amplitude_percent 0.9 and period 4 (as in windy.sdf).
-         force_approximation_scaling_factor scales the bluff-body drag
-         (F ~= factor * mass * (v_wind - v_link)); windy.sdf uses 0.01, which is
-         nearly negligible. The dominant wind path for the T2 is the LiftDrag on
-         base_link, which only sees wind if base_link has <enable_wind>true. -->
+         force_approximation_scaling_factor is DELIBERATELY 0: that force is
+         `factor * mass * (v_wind - v_link)`, i.e. linear in velocity,
+         proportional to mass, and applied at the centre of mass so it produces
+         no aerodynamic moment whatsoever. The T2 now carries a real quadratic
+         bluff-body drag plugin (px4_gz_plugins::BodyDrag, see
+         plugins/body_drag/) and this approximation would double-count with it.
+
+         Do NOT remove this plugin: it is what turns the <wind> seed above into
+         the gusting wind vector, and BodyDrag and LiftDrag both read that.
+
+         Note the LiftDrag surfaces on base_link contribute NOTHING in a
+         following wind: they return early on `forwardI.Dot(vel) <= 0`. -->
     <plugin name="gz::sim::systems::WindEffects" filename="gz-sim-wind-effects-system">
-      <force_approximation_scaling_factor>0.1</force_approximation_scaling_factor>
+      <force_approximation_scaling_factor>0</force_approximation_scaling_factor>
       <horizontal>
         <magnitude>
           <time_for_rise>2</time_for_rise>

@@ -726,6 +726,50 @@
         </ode>
       </physics>
     </joint>
+    <!-- Bluff-body aerodynamic drag. This is the ONLY plugin on this model
+         that produces a wind force at a hover attitude.
+
+         The LiftDrag surfaces below return early on
+         `forwardI.Dot(vel) <= 0` (LiftDrag.cc:313), so they contribute
+         exactly zero whenever the relative flow arrives from the rear
+         hemisphere -- which is the whole of a hover in a following wind.
+         gz-sim-wind-effects-system's own force approximation is
+         `k*m*(v_wind - v_link)`: linear in velocity, proportional to MASS,
+         applied at the centre of mass, hence no aerodynamic moment at all.
+         Between them a 25 m/s wind produced 5.9 N on this airframe where
+         quadratic drag demands 22.5 N, and the vehicle landed.
+
+         Set <force_approximation_scaling_factor> to 0 in the world so that
+         approximation does not double-count with this plugin. Keep the
+         WindEffects plugin itself: it is what generates the gusting wind
+         vector this one reads.
+
+         cda is the drag area Cd*A per BODY axis [m^2]:
+           x  0.06  Chordwise. Anchored to the review's independent estimate
+                    of 0.9 N at 5 m/s, which implies CdA = 0.0598 m^2.
+                    Wing CD0 ~0.025 on 1.18 m^2 planform, plus the nacelles,
+                    booms and gear.
+           y  0.12  Side-on. Geometric estimate: fuselage side area plus the
+                    tail boom and fin. NOT independently confirmed.
+           z  1.30  Face-on. 1.18 m^2 of wing planform at a flat-plate Cd of
+                    ~1.1. NOT independently confirmed, and note this one acts
+                    on CLIMB AND DESCENT, not just wind: it is worth 3.1 N
+                    (13% of weight) against a 2 m/s climb. Set it to 0 to
+                    isolate the horizontal wind question.
+
+         cp is the centre of pressure relative to the CENTRE OF MASS, body
+         frame. -0.15 m puts it aft, since most of the side and vertical area
+         (tail boom, fin, elevator at -0.85) is behind the CG; that offset is
+         what produces weathervaning and gust-induced attitude upset. Set it
+         to 0 0 0 for a force-only model with no aerodynamic moment. -->
+    <plugin filename="libBodyDrag.so" name="px4_gz_plugins::BodyDrag">
+      <link_name>base_link</link_name>
+      <cda>0.06 0.12 1.30</cda>
+      <cp>-0.15 0 0</cp>
+      <air_density>1.2041</air_density>
+      <topic>/t2/body_drag</topic>
+    </plugin>
+
     <plugin filename="gz-sim-lift-drag-system" name="gz::sim::systems::LiftDrag">
       <a0>0.05984281113</a0>
       <cla>4.752798721</cla>
