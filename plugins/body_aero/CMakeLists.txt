@@ -19,9 +19,9 @@ find_package(gz-math7 REQUIRED)
 find_package(gz-msgs10 REQUIRED)
 find_package(gz-transport13 REQUIRED)
 
-add_library(BodyDrag SHARED BodyDrag.cc)
-target_include_directories(BodyDrag PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
-target_link_libraries(BodyDrag
+add_library(BodyAero SHARED BodyAero.cc)
+target_include_directories(BodyAero PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(BodyAero
   PRIVATE
     gz-plugin2::register
     gz-sim8::gz-sim8

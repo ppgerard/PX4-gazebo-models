@@ -726,50 +726,79 @@
         </ode>
       </physics>
     </joint>
-    <!-- Bluff-body aerodynamic drag. This is the ONLY plugin on this model
-         that produces a wind force at a hover attitude.
+    <!-- Aerodynamics. This is the ONLY source of aerodynamic force on the
+         airframe: the four LiftDrag surfaces below are disabled, and the
+         world's WindEffects force approximation is set to 0 (verified: a free
+         body in a 25 m/s wind shows exactly zero horizontal displacement).
+         WindEffects itself must stay loaded, because it is what turns the
+         world's <wind> seed into the gusting vector this plugin reads.
 
-         The LiftDrag surfaces below return early on
-         `forwardI.Dot(vel) <= 0` (LiftDrag.cc:313), so they contribute
-         exactly zero whenever the relative flow arrives from the rear
-         hemisphere -- which is the whole of a hover in a following wind.
-         gz-sim-wind-effects-system's own force approximation is
-         `k*m*(v_wind - v_link)`: linear in velocity, proportional to MASS,
-         applied at the centre of mass, hence no aerodynamic moment at all.
-         Between them a 25 m/s wind produced 5.9 N on this airframe where
-         quadratic drag demands 22.5 N, and the vehicle landed.
+         DRAG, per body axis, at that axis' own centre of pressure. Areas are
+         the projected collision geometry, measured from this file:
+           A_x 0.1130   A_y 0.0333   A_z 1.2760 m^2
+         cda values below are Cd*A:
+           x 0.060  LiftDrag's own profile drag area at the wing's built-in
+                    incidence is sum|cda*a0|*area = 0.0397 m^2; the rotors and
+                    nacelles add 0.006 from the collision geometry; the rest is
+                    the fuselage and gear the collision model omits entirely.
+                    Independently, the review's closed-form 0.9 N at 5 m/s
+                    implies 0.0598 m^2. Three routes, same number.
+           y 0.059  (A_y 0.0333 wing edge + 0.020 rudder) * Cd 1.1. A LOWER
+                    BOUND: this model has no fuselage or tail boom collision
+                    geometry at all, so there is side area it cannot see.
+           z 1.510  A_z 1.2760 * Cd 1.18, a flat plate normal to the flow at
+                    the wing's aspect ratio 3.9. NOTE this acts on CLIMB AND
+                    DESCENT, not only on wind: 3.6 N against a 2 m/s climb.
 
-         Set <force_approximation_scaling_factor> to 0 in the world so that
-         approximation does not double-count with this plugin. Keep the
-         WindEffects plugin itself: it is what generates the gusting wind
-         vector this one reads.
+         Centres of pressure are the area-weighted centroids of that same
+         collision geometry, per axis (x front -0.0045, y side +0.0086,
+         z below -0.0088 m), relative to the CENTRE OF MASS. They are small
+         because this airframe is very nearly symmetric about its CG; the
+         moments that matter come from the lifting surfaces, which carry their
+         own cp taken straight from the LiftDrag blocks.
 
-         cda is the drag area Cd*A per BODY axis [m^2]:
-           x  0.06  Chordwise. Anchored to the review's independent estimate
-                    of 0.9 N at 5 m/s, which implies CdA = 0.0598 m^2.
-                    Wing CD0 ~0.025 on 1.18 m^2 planform, plus the nacelles,
-                    booms and gear.
-           y  0.12  Side-on. Geometric estimate: fuselage side area plus the
-                    tail boom and fin. NOT independently confirmed.
-           z  1.30  Face-on. 1.18 m^2 of wing planform at a flat-plate Cd of
-                    ~1.1. NOT independently confirmed, and note this one acts
-                    on CLIMB AND DESCENT, not just wind: it is worth 3.1 N
-                    (13% of weight) against a 2 m/s climb. Set it to 0 to
-                    isolate the horizontal wind question.
-
-         cp is the centre of pressure relative to the CENTRE OF MASS, body
-         frame. -0.15 m puts it aft, since most of the side and vertical area
-         (tail boom, fin, elevator at -0.85) is behind the CG; that offset is
-         what produces weathervaning and gust-induced attitude upset. Set it
-         to 0 0 0 for a force-only model with no aerodynamic moment. -->
-    <plugin filename="libBodyDrag.so" name="px4_gz_plugins::BodyDrag">
+         LIFT, per surface, over the full +-180 deg. area / a0 / cla /
+         alpha_stall / cp / forward / upward are copied VERBATIM from the
+         LiftDrag blocks that are now disabled, so the head-on behaviour is
+         unchanged; what is new is that the rear hemisphere is no longer a
+         hole. cp here is relative to the centre of mass, which sits at
+         -0.008481 m, so each LiftDrag cp_x is shifted by +0.008481. -->
+    <plugin filename="libBodyAero.so" name="px4_gz_plugins::BodyAero">
       <link_name>base_link</link_name>
-      <cda>0.06 0.12 1.30</cda>
-      <cp>-0.15 0 0</cp>
+      <cda>0.060 0.059 1.510</cda>
+      <cp_drag_x>-0.0045 0 0</cp_drag_x>
+      <cp_drag_y>0.0086 0 0</cp_drag_y>
+      <cp_drag_z>-0.0088 0 0</cp_drag_z>
       <air_density>1.2041</air_density>
-      <topic>/t2/body_drag</topic>
+      <topic>/t2/body_aero</topic>
+
+      <surface><name>left_elevon</name>
+        <area>0.5</area><a0>0.05984281113</a0><cla>4.752798721</cla>
+        <alpha_stall>0.3391428111</alpha_stall>
+        <cp>-0.041519 0.3 0.05</cp>
+        <forward>1 0 0</forward><upward>0 0 1</upward></surface>
+      <surface><name>right_elevon</name>
+        <area>0.5</area><a0>0.05984281113</a0><cla>4.752798721</cla>
+        <alpha_stall>0.3391428111</alpha_stall>
+        <cp>-0.041519 -0.3 0.05</cp>
+        <forward>1 0 0</forward><upward>0 0 1</upward></surface>
+      <surface><name>elevator</name>
+        <area>0.01</area><a0>-0.2</a0><cla>4.752798721</cla>
+        <alpha_stall>0.3391428111</alpha_stall>
+        <cp>-0.491519 0 0</cp>
+        <forward>1 0 0</forward><upward>0 0 1</upward></surface>
+      <surface><name>rudder</name>
+        <area>0.02</area><a0>0.0</a0><cla>4.752798721</cla>
+        <alpha_stall>0.3391428111</alpha_stall>
+        <cp>-0.491519 0 0.05</cp>
+        <forward>1 0 0</forward><upward>0 1 0</upward></surface>
     </plugin>
 
+    <!-- DISABLED: superseded by px4_gz_plugins::BodyAero below.
+         LiftDrag returns early on `forwardI.Dot(vel) <= 0`, so these
+         surfaces produce nothing at all when the flow arrives from the
+         rear hemisphere, which is most of a hover. Their parameters are
+         carried over verbatim into BodyAero <surface> entries.
     <plugin filename="gz-sim-lift-drag-system" name="gz::sim::systems::LiftDrag">
       <a0>0.05984281113</a0>
       <cla>4.752798721</cla>
@@ -790,11 +819,17 @@
       </control_joint_name>
       <control_joint_rad_to_cl>-1.0</control_joint_rad_to_cl>
     </plugin>
+    -->
     <plugin
       filename="gz-sim-joint-position-controller-system" name="gz::sim::systems::JointPositionController">
       <joint_name>left_elevon_joint</joint_name>
       <sub_topic>servo_0</sub_topic>
     </plugin>
+    <!-- DISABLED: superseded by px4_gz_plugins::BodyAero below.
+         LiftDrag returns early on `forwardI.Dot(vel) <= 0`, so these
+         surfaces produce nothing at all when the flow arrives from the
+         rear hemisphere, which is most of a hover. Their parameters are
+         carried over verbatim into BodyAero <surface> entries.
     <plugin filename="gz-sim-lift-drag-system" name="gz::sim::systems::LiftDrag">
       <a0>0.05984281113</a0>
       <cla>4.752798721</cla>
@@ -815,11 +850,17 @@
       </control_joint_name>
       <control_joint_rad_to_cl>-1.0</control_joint_rad_to_cl>
     </plugin>
+    -->
     <plugin
       filename="gz-sim-joint-position-controller-system" name="gz::sim::systems::JointPositionController">
       <joint_name>right_elevon_joint</joint_name>
       <sub_topic>servo_1</sub_topic>
     </plugin>
+    <!-- DISABLED: superseded by px4_gz_plugins::BodyAero below.
+         LiftDrag returns early on `forwardI.Dot(vel) <= 0`, so these
+         surfaces produce nothing at all when the flow arrives from the
+         rear hemisphere, which is most of a hover. Their parameters are
+         carried over verbatim into BodyAero <surface> entries.
     <plugin filename="gz-sim-lift-drag-system" name="gz::sim::systems::LiftDrag">
       <a0>-0.2</a0>
       <cla>4.752798721</cla>
@@ -840,11 +881,17 @@
       </control_joint_name>
       <control_joint_rad_to_cl>-12.0</control_joint_rad_to_cl>
     </plugin>
+    -->
     <plugin
       filename="gz-sim-joint-position-controller-system" name="gz::sim::systems::JointPositionController">
       <joint_name>elevator_joint</joint_name>
       <sub_topic>servo_2</sub_topic>
     </plugin>
+    <!-- DISABLED: superseded by px4_gz_plugins::BodyAero below.
+         LiftDrag returns early on `forwardI.Dot(vel) <= 0`, so these
+         surfaces produce nothing at all when the flow arrives from the
+         rear hemisphere, which is most of a hover. Their parameters are
+         carried over verbatim into BodyAero <surface> entries.
     <plugin filename="gz-sim-lift-drag-system" name="gz::sim::systems::LiftDrag">
       <a0>0.0</a0>
       <cla>4.752798721</cla>
@@ -864,6 +911,7 @@
         rudder_joint
       </control_joint_name>
     </plugin>
+    -->
     <plugin
       filename="gz-sim-joint-position-controller-system" name="gz::sim::systems::JointPositionController">
       <joint_name>rudder_joint</joint_name>
