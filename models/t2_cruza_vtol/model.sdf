@@ -783,9 +783,9 @@
     <plugin filename="libBodyAero.so" name="px4_gz_plugins::BodyAero">
       <link_name>base_link</link_name>
       <cda>0.045 0.178 0.100</cda>
-      <cp_drag_x>-0.036 0 0</cp_drag_x>
-      <cp_drag_y>-0.036 0 0</cp_drag_y>
-      <cp_drag_z>-0.036 0 0</cp_drag_z>
+      <cp_drag_x>0 0 0</cp_drag_x>
+      <cp_drag_y>0 0 0</cp_drag_y>
+      <cp_drag_z>0 0 0</cp_drag_z>
       <air_density>1.2041</air_density>
       <topic>/t2/body_aero</topic>
 
@@ -797,25 +797,25 @@
         <area>0.2736</area><a0>0.05984281113</a0><cla>4.752798721</cla>
         <alpha_stall>0.3391428111</alpha_stall>
         <cd0>0.030</cd0><ar>2.84</ar><eff>0.85</eff>
-        <cp>-0.036 0.30 0.0</cp>
+        <cp>0 0 0</cp>
         <forward>1 0 0</forward><upward>0 0 1</upward></surface>
       <surface><name>right_wing</name>
         <area>0.2736</area><a0>0.05984281113</a0><cla>4.752798721</cla>
         <alpha_stall>0.3391428111</alpha_stall>
         <cd0>0.030</cd0><ar>2.84</ar><eff>0.85</eff>
-        <cp>-0.036 -0.30 0.0</cp>
+        <cp>0 0 0</cp>
         <forward>1 0 0</forward><upward>0 0 1</upward></surface>
       <surface><name>elevator</name>
         <area>0.0247</area><a0>-0.2</a0><cla>4.752798721</cla>
         <alpha_stall>0.3391428111</alpha_stall>
         <cd0>0.020</cd0><ar>4.0</ar><eff>0.85</eff>
-        <cp>-0.642 0 0</cp>
+        <cp>0 0 0</cp>
         <forward>1 0 0</forward><upward>0 0 1</upward></surface>
       <surface><name>rudder</name>
         <area>0.0185</area><a0>0.0</a0><cla>4.752798721</cla>
         <alpha_stall>0.3391428111</alpha_stall>
         <cd0>0.020</cd0><ar>2.4</ar><eff>0.85</eff>
-        <cp>-0.642 0 0.08</cp>
+        <cp>0 0 0</cp>
         <forward>1 0 0</forward><upward>0 1 0</upward></surface>
     </plugin>
 

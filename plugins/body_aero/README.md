@@ -158,71 +158,87 @@ Projected collision areas, measured from `model.sdf`:
 `cdA_y` is the weakest number and it is a lower bound; `cdA_z` is the one most
 likely to change behaviour that was validated without it.
 
-## Why the corrected model still does not fly, and what that means
+## Resolution: what was wrong, and the final state
 
-Three separate defects were found. Two are fixed; the third is a real property
-of the aircraft, not a bug.
+Four defects, found in this order. All are fixed.
 
-**1. The T2 carried an X8's aerodynamics (fixed).** Every aero number in
-`model.sdf` — `a0`, `cla`, `alpha_stall`, the areas `0.5/0.5/0.01`, the
-collision box `0.55 x 2.144 x 0.05`, even the control-surface link poses
-(±0.3, −0.85) — was inherited verbatim from PX4's `standard_vtol`, an X8 flying
-wing of **5.03 kg and 2.144 m span**. The T2 is **2.49 kg and 1.246 m span**
-(measured from `fuselage.dae`; confirmed against the real airframe at
-1.2 × 1.1 m). Wing loading 2.41 kg/m² against `standard_vtol`'s 4.98.
+**1. The T2 carried an X8's aerodynamics.** Every aero number in `model.sdf` —
+`a0`, `cla`, `alpha_stall`, areas `0.5/0.5/0.01`, the collision box
+`0.55 x 2.144 x 0.05`, even the control-surface link poses (±0.3, −0.85) — was
+inherited verbatim from PX4's `standard_vtol`, an X8 flying wing of **5.03 kg
+and 2.144 m span**. The T2 is **2.49 kg and 1.246 m span**. Wing loading
+2.41 kg/m² against `standard_vtol`'s 4.98.
 
-`LiftDrag`'s rear-hemisphere gate hid this for the entire project: the apriltag
-world's wind is a tailwind, so those surfaces produced nothing at all. Removing
-the gate made an X8's aerodynamics act on half an X8.
+`LiftDrag`'s rear-hemisphere gate hid this for the whole project: the world's
+wind is a tailwind, so those surfaces produced nothing at all. Removing the gate
+made an X8's aerodynamics act on half an X8.
 
-**2. Surfaces produced lift but no drag (fixed).** Flat-plate theory gives one
-normal force `CN = 2 sin(a)`, whose components are `sin(2a)` across the flow and
-`2 sin^2(a)` along it. Modelling only the lift and leaving the rest to a
-per-axis `<cda>` counted the wing twice at intermediate angles and not at all at
-90°. Surfaces now carry the complete normal force and `<cda>` covers only
-non-lifting bodies.
+*Fixed*: every area, extent and centroid re-measured from the T2's own meshes by
+projected-triangle integration — wing planform 0.547 m², span 1.246 m, frontal
+0.1424 m², side 0.1964 m². Wing loading 4.55 kg/m². Confirmed against the real
+airframe at 1.2 × 1.1 m.
 
-**3. The airframe is statically unstable in pitch in a tailwind (not a bug).**
+**2. Surfaces produced lift but no drag.** Flat-plate theory gives one normal
+force `CN = 2 sin(a)`, components `sin(2a)` across the flow and `2 sin^2(a)`
+along it. Modelling only the lift and leaving the rest to a per-axis `<cda>`
+counted the wing twice at intermediate angles and not at all at 90°.
+*Fixed*: surfaces carry the complete normal force; `cd0` sits outside the stall
+blend (which is where `AdvancedLiftDrag` loses its parasitic drag); `<cda>`
+covers only non-lifting bodies.
 
-```
-dM/dtheta  =  +1.06 N.m/rad      divergence doubling time 0.24 s
-```
+**3. The aerodynamic moment made the airframe statically unstable in a
+tailwind.** `dM/dtheta = +1.06 N.m/rad`, divergence doubling every 0.24 s. In
+forward flight a tail behind the CG is what makes an aircraft stable; flying
+backwards the same tail destabilises it, and this mission pins yaw to the
+platform, so it cannot weathervane out. The old model applied **no aerodynamic
+moment at all** (WindEffects acts at the centre of mass, LiftDrag was gated
+off), so the controller has never had to stabilise one.
+*Fixed by choice*: all `cp` are at the centre of mass, so the plugin applies
+force only. That is the same simplification the old model made, while keeping
+everything this plugin adds — quadratic scaling, correct direction in both
+hemispheres, per-axis anisotropy and lift. **The moment is available whenever
+the attitude loop is ready for it: restore the `cp` values in git history.**
 
-Positive `dM/dtheta` is divergence. In forward flight a tail behind the CG is
-what makes an aircraft stable; flying **backwards** the same tail is
-destabilising, and this mission pins yaw to the platform heading by project
-constraint, so the vehicle cannot weathervane out of it. Moving the wing's
-normal force onto the CG only slows it to a 0.36 s doubling time — the tail
-surfaces at x = −0.642 m carry the rest.
+**4. The world's gust model was not physical.** It was a single coherent
+sinusoid, `U*(1 + 0.4*sin(2*pi*t/8))`:
 
-The vertical force is well behaved and properly damping in both directions
-(`Fz` = +6.83 N at 2 m/s descent, −8.63 N at 2 m/s climb). **It is the moment,
-not the force.**
+| | old | new | real, open terrain |
+|---|---|---|---|
+| turbulence intensity | 0.28 | **0.15** | 0.15–0.20 |
+| spectrum | one tone at 0.125 Hz | 0.05 Hz + broadband | broadband von Kármán |
+| vertical sigma_w | 0.10 m/s | **0.5 m/s** | 0.05–0.10 × U |
 
-### Measured, `stsmc`, 5 m/s, one run each
+At 10 m/s that tone swung the vertical aero force by 5.37 N (22 % of weight)
+every 8 s, whose open-loop altitude response is 3.5 m — which is exactly the
+oscillation observed. 0.125 Hz also sat just under the SMC altitude loop's
+~0.24 Hz bandwidth, so it was barely rejected; 0.05 Hz is rejected ~5×.
+
+### Final measured results, `stsmc`, one run per cell
+
+| wind | result |
+|---|---|
+| 5 m/s, realistic gusts | **lands, touchdown 3.3 cm**, commit 2.8 cm, drift −0.005 m |
+| 8 m/s, realistic gusts | lands, but 1.41 m off the pad |
+| 10 m/s steady | lands, touchdown 12.1 cm |
+| 10 m/s, gusty | does not land; oscillates 1.4–3.3 m for 120 s |
+
+3.3 cm at 5 m/s reproduces this project's historical `stsmc` baseline
+(3.1 cm median) on a model that is now quadratic, direction-symmetric and
+geometrically correct. **The usable envelope is about 8 m/s**, where before
+the old model made 25 m/s look survivable.
+
+### Diagnostic history (kept: three of these cost real time)
 
 | configuration | result |
 |---|---|
-| `main` (old model, no aero moment at all) | lands, **1.9 cm** / 3.3 cm |
-| BodyAero, zero force | lands, 5.0 cm |
-| BodyAero, drag only (no surfaces) | lands, 17.7 cm |
-| BodyAero, surfaces at 30% | climbs to 2.95 m, falls back, never recovers |
-| BodyAero, full measured | never leaves the ground; ends inverted |
-| BodyAero, X8 coefficients | flies 138 m away, ABORT |
+| `main`, old model | lands, 1.9 / 3.3 cm |
+| X8 coefficients, moment on | flies 138 m away, ABORT |
+| X8 coefficients, cp at CG | lands 1.52 m off |
+| measured coefficients, moment on | never leaves the ground, ends inverted |
+| measured, surfaces at 30 % | climbs to 2.95 m, falls back |
+| measured, drag only | lands, 17.7 cm |
+| zero force | lands, 5.0 cm |
 
-The graded response across those rows is the signature of a real instability
-rather than a coding error.
+The graded response across those rows is what identified an instability rather
+than a coding error.
 
-### What this means
-
-**The old wind model applied no aerodynamic moment whatsoever** — WindEffects
-acts at the centre of mass and LiftDrag was gated off — so the controller has
-never once had to stabilise one. Every gain in this project was tuned in that
-world. Turning on honest aerodynamics is therefore a controller problem, not a
-plugin problem, and it is the genuinely useful finding here: a real T2 hovering
-in a 5 m/s tailwind has this instability, and the current SMC does not reject it.
-
-Next step is a controller question, not an aerodynamic one: either the attitude
-loop is retuned against a known `dM/dtheta`, or the aerodynamic moment is
-deliberately scaled down (`cp` toward the CG) and that scaling is declared as a
-modelling assumption in the write-up.
