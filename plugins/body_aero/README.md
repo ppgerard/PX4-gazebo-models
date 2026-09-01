@@ -93,9 +93,29 @@ relative to the **link origin**, so on this airframe they shift by +0.008481 m.
 ## Build and use
 
 ```bash
-./build.sh                                  # -> build/libBodyAero.so
-export GZ_SIM_SYSTEM_PLUGIN_PATH=$PWD/build:$GZ_SIM_SYSTEM_PLUGIN_PATH
+./build.sh          # -> build/libBodyAero.so, and symlinks it into PX4's plugin dir
 ```
+
+`build.sh` links the result into
+`PX4-Autopilot/build/px4_sitl_default/src/modules/simulation/gz_plugins/`, which
+PX4's generated `rootfs/gz_env.sh` **already** exports on
+`GZ_SIM_SYSTEM_PLUGIN_PATH`. That is what makes a bare
+
+```bash
+make px4_sitl gz_t2_cruza_vtol PX4_GZ_WORLD=apriltag
+```
+
+work with nothing exported. Without it that route fails with
+
+```
+[Err] [SystemLoader.cc:92] Failed to load system plugin [libBodyAero.so] :
+      Could not find shared library.
+```
+
+The symlink lives under `build/`, so **a clean PX4 rebuild removes it** - re-run
+`build.sh` afterwards. The landing harnesses do not depend on it: they prepend
+this build directory to `GZ_SIM_SYSTEM_PLUGIN_PATH` themselves, so both routes
+work independently.
 
 The landing harnesses in `px4-smc-control-ws/tools/` do this automatically and
 warn if the library is missing. **Gazebo loads a model whose plugin cannot be
