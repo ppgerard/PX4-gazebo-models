@@ -88,7 +88,7 @@
          Suggested robustness sweep: 0, 3, 5, 8 m/s, and rotate the direction
          (e.g. "0 5 0", "3.5 3.5 0") to test cross-wind vs head-wind landings. -->
     <wind>
-      <linear_velocity>10 0 0</linear_velocity>
+      <linear_velocity>5 0 0</linear_velocity>
     </wind>
 
     <!-- NOTE: once a world declares any <plugin>, Gazebo stops loading the
