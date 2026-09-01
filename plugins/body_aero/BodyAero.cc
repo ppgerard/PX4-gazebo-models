@@ -35,6 +35,9 @@ struct Surface
   double alpha0{0.0};
   double cla{0.0};
   double alphaStall{GZ_PI_2};
+  double cd0{0.0};        // profile drag, ALWAYS present (never blended out)
+  double ar{0.0};         // aspect ratio; 0 disables the induced term
+  double eff{0.85};       // Oswald efficiency
   math::Vector3d cp = math::Vector3d::Zero;      // from the CENTRE OF MASS
   math::Vector3d forward{1, 0, 0};
   math::Vector3d upward{0, 0, 1};
@@ -130,6 +133,9 @@ void BodyAero::Configure(const Entity &_entity,
     s.alpha0     = elem->Get<double>("a0", s.alpha0).first;
     s.cla        = elem->Get<double>("cla", s.cla).first;
     s.alphaStall = elem->Get<double>("alpha_stall", s.alphaStall).first;
+    s.cd0        = elem->Get<double>("cd0", s.cd0).first;
+    s.ar         = elem->Get<double>("ar", s.ar).first;
+    s.eff        = elem->Get<double>("eff", s.eff).first;
     s.cp         = elem->Get<math::Vector3d>("cp", s.cp).first;
     s.forward    = elem->Get<math::Vector3d>("forward", s.forward).first;
     s.upward     = elem->Get<math::Vector3d>("upward", s.upward).first;
@@ -179,7 +185,8 @@ void BodyAero::Configure(const Entity &_entity,
   {
     gzmsg << "  surface [" << s.name << "] area=" << s.area
           << " a0=" << s.alpha0 << " cla=" << s.cla
-          << " alpha_stall=" << s.alphaStall << " cp=" << s.cp << "\n";
+          << " alpha_stall=" << s.alphaStall << " cd0=" << s.cd0
+          << " AR=" << s.ar << " cp=" << s.cp << "\n";
   }
 }
 
@@ -287,13 +294,26 @@ void BodyAero::PreUpdate(const UpdateInfo &_info, EntityComponentManager &_ecm)
     const double sigma =
         (1.0 + eNeg + ePos) / ((1.0 + eNeg) * (1.0 + ePos));
 
-    const double cl = (1.0 - sigma) * (s.cla * alpha) +
-                      sigma * std::sin(2.0 * alpha);
+    const double clLin = s.cla * alpha;
+    const double cl = (1.0 - sigma) * clLin + sigma * std::sin(2.0 * alpha);
+
+    // Drag must come from the SAME normal force as the lift, or the two are
+    // separate copies of one physical effect. Flat-plate theory gives a single
+    // normal force CN = 2*sin(alpha), whose components are lift = sin(2*alpha)
+    // perpendicular to the flow and drag = 2*sin^2(alpha) along it. Modelling
+    // only the lift here and leaving the rest to a per-axis <cda> term counted
+    // the wing twice at intermediate angles and not at all at 90 degrees.
+    // cd0 sits OUTSIDE the blend: AdvancedLiftDrag multiplies it by (1-sigma),
+    // so its parasitic drag vanishes exactly where a stalled wing has most.
+    double cd = s.cd0 + sigma * (1.0 - std::cos(2.0 * alpha));
+    if (s.ar > 0.0 && s.eff > 0.0)
+      cd += (1.0 - sigma) * (clLin * clLin) / (GZ_PI * s.ar * s.eff);
 
     const double qDyn = 0.5 * this->dataPtr->rho * speed * speed;
-    // Lift acts perpendicular to the in-plane relative flow.
-    const auto liftDir = span.Cross(vLD / speed);
-    const auto fBody = cl * qDyn * s.area * liftDir;
+    const auto vHat = vLD / speed;
+    // Lift perpendicular to the in-plane flow, drag opposing it.
+    const auto liftDir = span.Cross(vHat);
+    const auto fBody = qDyn * s.area * (cl * liftDir - cd * vHat);
 
     const auto fWorld = q.RotateVector(fBody);
     totalForce += fWorld;

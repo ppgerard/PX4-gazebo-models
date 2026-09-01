@@ -726,71 +726,96 @@
         </ode>
       </physics>
     </joint>
-    <!-- Aerodynamics. This is the ONLY source of aerodynamic force on the
-         airframe: the four LiftDrag surfaces below are disabled, and the
-         world's WindEffects force approximation is set to 0 (verified: a free
-         body in a 25 m/s wind shows exactly zero horizontal displacement).
-         WindEffects itself must stay loaded, because it is what turns the
-         world's <wind> seed into the gusting vector this plugin reads.
+    <!-- Aerodynamics. The ONLY source of aerodynamic force on the airframe:
+         the LiftDrag surfaces below are disabled and the world's WindEffects
+         force approximation is 0 (verified: a free body in a 25 m/s wind shows
+         exactly zero horizontal displacement). WindEffects itself must stay
+         loaded, since it generates the gusting wind vector this plugin reads.
 
-         DRAG, per body axis, at that axis' own centre of pressure. Areas are
-         the projected collision geometry, measured from this file:
-           A_x 0.1130   A_y 0.0333   A_z 1.2760 m^2
-         cda values below are Cd*A:
-           x 0.060  LiftDrag's own profile drag area at the wing's built-in
-                    incidence is sum|cda*a0|*area = 0.0397 m^2; the rotors and
-                    nacelles add 0.006 from the collision geometry; the rest is
-                    the fuselage and gear the collision model omits entirely.
-                    Independently, the review's closed-form 0.9 N at 5 m/s
-                    implies 0.0598 m^2. Three routes, same number.
-           y 0.059  (A_y 0.0333 wing edge + 0.020 rudder) * Cd 1.1. A LOWER
-                    BOUND: this model has no fuselage or tail boom collision
-                    geometry at all, so there is side area it cannot see.
-           z 1.510  A_z 1.2760 * Cd 1.18, a flat plate normal to the flow at
-                    the wing's aspect ratio 3.9. NOTE this acts on CLIMB AND
-                    DESCENT, not only on wind: 3.6 N against a 2 m/s climb.
+         EVERY NUMBER BELOW IS MEASURED FROM THE T2's OWN MESHES, not from the
+         SDF's <collision> or the old LiftDrag blocks. Both of those were
+         inherited from PX4's standard_vtol (an X8 flying wing) when this model
+         was built and never rescaled:
 
-         Centres of pressure are the area-weighted centroids of that same
-         collision geometry, per axis (x front -0.0045, y side +0.0086,
-         z below -0.0088 m), relative to the CENTRE OF MASS. They are small
-         because this airframe is very nearly symmetric about its CG; the
-         moments that matter come from the lifting surfaces, which carry their
-         own cp taken straight from the LiftDrag blocks.
+             standard_vtol   2.144 m span, 5.03 kg, LiftDrag areas 0.5/0.5/0.01
+             t2_cruza_vtol   1.246 m span, 2.49 kg, SAME areas, SAME a0/cla/
+                             alpha_stall, SAME collision box 0.55x2.144x0.05,
+                             SAME control-surface link poses (+-0.3, -0.85)
 
-         LIFT, per surface, over the full +-180 deg. area / a0 / cla /
-         alpha_stall / cp / forward / upward are copied VERBATIM from the
-         LiftDrag blocks that are now disabled, so the head-on behaviour is
-         unchanged; what is new is that the rear hemisphere is no longer a
-         hole. cp here is relative to the centre of mass, which sits at
-         -0.008481 m, so each LiftDrag cp_x is shifted by +0.008481. -->
+         So the airframe carried the aerodynamics of an aircraft twice its mass
+         and 1.7x its span: wing loading 2.41 kg/m^2 against standard_vtol's
+         4.98. This was invisible for the whole project because LiftDrag returns
+         early on `forwardI.Dot(vel) <= 0` and the apriltag world's wind is a
+         tailwind, so those surfaces produced nothing at all. Removing the gate
+         made them act, and a 5 m/s landing that lands at 3.3 cm with them
+         disabled flew 138 m away with them enabled.
+
+         Measured from the meshes (projected triangle areas, closed-surface
+         corrected, in the model frame):
+             fuselage.dae   front 0.1147  side 0.1759  PLANFORM 0.5032 m^2
+                            x range [-0.690, +0.359], span +-0.622
+                            planform centroid x = -0.0447
+             ailerons       0.0220 m^2 planform each
+             elevator.dae   0.0247 m^2 planform
+             rudder.dae     0.0185 m^2 SIDE area (it is a vertical surface)
+         Lifting planform = 0.5032 + 2*0.0220 = 0.547 m^2, giving a wing loading
+         of 4.55 kg/m^2, in line with standard_vtol 4.98, quadtailsitter 4.05
+         and advanced_plane 2.96.
+
+         cda covers ONLY NON-LIFTING bodies now. Each <surface> carries its
+         complete normal force (lift AND the flat-plate/profile drag), so a
+         per-axis term over the same wing would be a second copy of it:
+           x 0.045  measured frontal 0.1424 m^2 less the wing's share, which is
+                    now cd0 on the surfaces. Together they come to ~0.061 m^2,
+                    against the review's independent closed-form 0.0598. 
+           y 0.178  measured side 0.1964 less the rudder's 0.0185, times Cd 1.0.
+                    The old value (0.059) came from the X8 collision box, which
+                    has no fuselage depth at all, and was 3x too small.
+           z 0.100  rotors and nacelles only. The WING's broadside drag is the
+                    surfaces' own sigma*(1-cos 2a) term, which reaches CD 2 at
+                    90 deg exactly where the lift term is zero.
+
+         cp values are the measured planform centroids, relative to the CENTRE
+         OF MASS (-0.008481 m). The TAIL positions are the one estimate here:
+         the meshes are exported about their own origins and the SDF link poses
+         are X8 leftovers (-0.85 m, behind an airframe that ends at -0.690), so
+         the tail surfaces are placed at the rear of the measured fuselage. -->
     <plugin filename="libBodyAero.so" name="px4_gz_plugins::BodyAero">
       <link_name>base_link</link_name>
-      <cda>0.060 0.059 1.510</cda>
-      <cp_drag_x>-0.0045 0 0</cp_drag_x>
-      <cp_drag_y>0.0086 0 0</cp_drag_y>
-      <cp_drag_z>-0.0088 0 0</cp_drag_z>
+      <cda>0.045 0.178 0.100</cda>
+      <cp_drag_x>-0.036 0 0</cp_drag_x>
+      <cp_drag_y>-0.036 0 0</cp_drag_y>
+      <cp_drag_z>-0.036 0 0</cp_drag_z>
       <air_density>1.2041</air_density>
       <topic>/t2/body_aero</topic>
 
-      <surface><name>left_elevon</name>
-        <area>0.5</area><a0>0.05984281113</a0><cla>4.752798721</cla>
+      <!-- Wing, split into halves. area = 0.547/2, AR = span^2/area = 2.84,
+           cd0 0.030 is the wing profile drag the old block implied
+           (cda*a0 = 0.6417*0.05984 = 0.0384) rounded down, since the fuselage
+           share of that is in <cda> above. -->
+      <surface><name>left_wing</name>
+        <area>0.2736</area><a0>0.05984281113</a0><cla>4.752798721</cla>
         <alpha_stall>0.3391428111</alpha_stall>
-        <cp>-0.041519 0.3 0.05</cp>
+        <cd0>0.030</cd0><ar>2.84</ar><eff>0.85</eff>
+        <cp>-0.036 0.30 0.0</cp>
         <forward>1 0 0</forward><upward>0 0 1</upward></surface>
-      <surface><name>right_elevon</name>
-        <area>0.5</area><a0>0.05984281113</a0><cla>4.752798721</cla>
+      <surface><name>right_wing</name>
+        <area>0.2736</area><a0>0.05984281113</a0><cla>4.752798721</cla>
         <alpha_stall>0.3391428111</alpha_stall>
-        <cp>-0.041519 -0.3 0.05</cp>
+        <cd0>0.030</cd0><ar>2.84</ar><eff>0.85</eff>
+        <cp>-0.036 -0.30 0.0</cp>
         <forward>1 0 0</forward><upward>0 0 1</upward></surface>
       <surface><name>elevator</name>
-        <area>0.01</area><a0>-0.2</a0><cla>4.752798721</cla>
+        <area>0.0247</area><a0>-0.2</a0><cla>4.752798721</cla>
         <alpha_stall>0.3391428111</alpha_stall>
-        <cp>-0.491519 0 0</cp>
+        <cd0>0.020</cd0><ar>4.0</ar><eff>0.85</eff>
+        <cp>-0.642 0 0</cp>
         <forward>1 0 0</forward><upward>0 0 1</upward></surface>
       <surface><name>rudder</name>
-        <area>0.02</area><a0>0.0</a0><cla>4.752798721</cla>
+        <area>0.0185</area><a0>0.0</a0><cla>4.752798721</cla>
         <alpha_stall>0.3391428111</alpha_stall>
-        <cp>-0.491519 0 0.05</cp>
+        <cd0>0.020</cd0><ar>2.4</ar><eff>0.85</eff>
+        <cp>-0.642 0 0.08</cp>
         <forward>1 0 0</forward><upward>0 1 0</upward></surface>
     </plugin>
 
