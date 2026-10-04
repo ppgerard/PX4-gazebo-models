@@ -1,0 +1,159 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<sdf version="1.9">
+  <world name="unified_wind">
+    <physics type="ode">
+      <max_step_size>0.004</max_step_size>
+      <real_time_factor>1.0</real_time_factor>
+      <real_time_update_rate>250</real_time_update_rate>
+    </physics>
+    <gravity>0 0 -9.8</gravity>
+    <magnetic_field>6e-06 2.3e-05 -4.2e-05</magnetic_field>
+    <atmosphere type="adiabatic"/>
+    <scene>
+      <grid>false</grid>
+      <ambient>0.4 0.4 0.4 1</ambient>
+      <background>0.7 0.7 0.7 1</background>
+      <shadows>true</shadows>
+    </scene>
+    <model name="ground_plane">
+      <static>true</static>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <plane>
+              <normal>0 0 1</normal>
+              <size>1 1</size>
+            </plane>
+          </geometry>
+          <surface>
+            <friction>
+              <ode/>
+            </friction>
+            <bounce/>
+            <contact/>
+          </surface>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <plane>
+              <normal>0 0 1</normal>
+              <size>100 100</size>
+            </plane>
+          </geometry>
+          <material>
+            <ambient>0.8 0.8 0.8 1</ambient>
+            <diffuse>0.8 0.8 0.8 1</diffuse>
+            <specular>0.8 0.8 0.8 1</specular>
+          </material>
+        </visual>
+        <pose>0 0 0 0 -0 0</pose>
+        <inertial>
+          <pose>0 0 0 0 -0 0</pose>
+          <mass>1</mass>
+          <inertia>
+            <ixx>1</ixx>
+            <ixy>0</ixy>
+            <ixz>0</ixz>
+            <iyy>1</iyy>
+            <iyz>0</iyz>
+            <izz>1</izz>
+          </inertia>
+        </inertial>
+        <enable_wind>false</enable_wind>
+      </link>
+      <pose>0 0 0 0 -0 0</pose>
+      <self_collide>false</self_collide>
+    </model>
+    <light name="sunUTC" type="directional">
+      <pose>0 0 500 0 -0 0</pose>
+      <cast_shadows>true</cast_shadows>
+      <intensity>1</intensity>
+      <direction>0.001 0.625 -0.78</direction>
+      <diffuse>0.904 0.904 0.904 1</diffuse>
+      <specular>0.271 0.271 0.271 1</specular>
+      <attenuation>
+        <range>2000</range>
+        <linear>0</linear>
+        <constant>1</constant>
+        <quadratic>0</quadratic>
+      </attenuation>
+      <spot>
+        <inner_angle>0</inner_angle>
+        <outer_angle>0</outer_angle>
+        <falloff>0</falloff>
+      </spot>
+    </light>
+    <!-- unified-controller campaign world: a STEADY mean wind, set per draw by
+         tools/unified_mc_run.sh; turbulence comes from BodyAero in the model.
+         Mean wind vector in the world (ENU) frame [m/s].
+         Set the magnitude here; the WindEffects plugin below adds the gusts.
+         Suggested robustness sweep: 0, 3, 5, 8 m/s, and rotate the direction
+         (e.g. "0 5 0", "3.5 3.5 0") to test cross-wind vs head-wind landings. -->
+    <wind>
+      <linear_velocity>0.000 0.000 0</linear_velocity>
+    </wind>
+
+    <!-- NOTE: once a world declares any <plugin>, Gazebo stops loading the
+         default server.config plugin set, so the full list must be declared
+         here. Copied from worlds/windy.sdf, plus WindEffects. -->
+    <plugin filename="gz-sim-physics-system" name="gz::sim::systems::Physics"/>
+    <plugin filename="gz-sim-user-commands-system" name="gz::sim::systems::UserCommands"/>
+    <plugin filename="gz-sim-scene-broadcaster-system" name="gz::sim::systems::SceneBroadcaster"/>
+    <plugin name="gz::sim::systems::Contact" filename="gz-sim-contact-system"/>
+    <plugin name="gz::sim::systems::Imu" filename="gz-sim-imu-system"/>
+    <plugin name="gz::sim::systems::Magnetometer" filename="gz-sim-magnetometer-system"/>
+    <plugin name="gz::sim::systems::AirPressure" filename="gz-sim-air-pressure-system"/>
+    <plugin name="gz::sim::systems::AirSpeed" filename="gz-sim-air-speed-system"/>
+    <plugin name="gz::sim::systems::ApplyLinkWrench" filename="gz-sim-apply-link-wrench-system"/>
+    <plugin name="gz::sim::systems::NavSat" filename="gz-sim-navsat-system"/>
+    <plugin filename="gz-sim-sensors-system" name="gz::sim::systems::Sensors">
+      <render_engine>ogre2</render_engine>
+    </plugin>
+
+    <!-- Gusts. The magnitude is modulated as mean * (1 + amplitude_percent*sin(2*pi*t/period))
+         plus Gaussian noise, and the direction is perturbed likewise.
+         Defaults below: 5 m/s mean, +-40% gusts (3..7 m/s) on an 8 s period,
+         with a slowly wandering direction. For a harsher case use
+         amplitude_percent 0.9 and period 4 (as in windy.sdf).
+         force_approximation_scaling_factor is DELIBERATELY 0: that force is
+         `factor * mass * (v_wind - v_link)`, i.e. linear in velocity,
+         proportional to mass, and applied at the centre of mass so it produces
+         no aerodynamic moment whatsoever. The T2 now carries a real quadratic
+         bluff-body drag plugin (px4_gz_plugins::BodyDrag, see
+         plugins/body_drag/) and this approximation would double-count with it.
+
+         Do NOT remove this plugin: it is what turns the <wind> seed above into
+         the gusting wind vector, which px4_gz_plugins::BodyAero reads.
+
+         The T2's own LiftDrag surfaces are DISABLED in model.sdf: they returned
+         early on `forwardI.Dot(vel) <= 0`, contributing nothing at all in a
+         following wind. BodyAero carries their parameters and covers the whole
+         sphere. -->
+    <plugin name="gz::sim::systems::WindEffects" filename="gz-sim-wind-effects-system">
+      <force_approximation_scaling_factor>0</force_approximation_scaling_factor>
+      <horizontal>
+        <magnitude>
+          <time_for_rise>2</time_for_rise>
+          <sin><amplitude_percent>0</amplitude_percent><period>20</period></sin>
+          <noise type='gaussian'><mean>0</mean><stddev>0</stddev></noise>
+        </magnitude>
+        <direction>
+          <time_for_rise>2</time_for_rise>
+          <sin><amplitude>0</amplitude><period>30</period></sin>
+          <noise type='gaussian'><mean>0</mean><stddev>0</stddev></noise>
+        </direction>
+      </horizontal>
+      <vertical>
+        <noise type='gaussian'><mean>0</mean><stddev>0</stddev></noise>
+      </vertical>
+    </plugin>
+
+    <spherical_coordinates>
+      <surface_model>EARTH_WGS84</surface_model>
+      <world_frame_orientation>ENU</world_frame_orientation>
+      <latitude_deg>47.397971057728974</latitude_deg>
+      <longitude_deg> 8.546163739800146</longitude_deg>
+      <elevation>0</elevation>
+    </spherical_coordinates>
+  </world>
+</sdf>
