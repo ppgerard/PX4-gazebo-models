@@ -257,7 +257,8 @@
           <upper>1.57</upper>
         </limit>
         <dynamics>
-          <friction>1.0</friction>
+          <damping>0.08</damping>
+          <friction>0.0</friction>
           <spring_reference>0</spring_reference>
           <spring_stiffness>0</spring_stiffness>
         </dynamics>
@@ -399,7 +400,8 @@
           <upper>1.57</upper>
         </limit>
         <dynamics>
-          <friction>1.0</friction>
+          <damping>0.08</damping>
+          <friction>0.0</friction>
           <spring_reference>0</spring_reference>
           <spring_stiffness>0</spring_stiffness>
         </dynamics>
@@ -964,7 +966,7 @@
       filename="gz-sim-joint-position-controller-system" name="gz::sim::systems::JointPositionController">
       <joint_name>motor_0_joint</joint_name>
       <sub_topic>servo_4</sub_topic>
-      <p_gain>100</p_gain>
+      <p_gain>2.66667</p_gain>
       <i_gain>0</i_gain>
       <d_gain>0</d_gain>
       <i_max>0.0</i_max>
@@ -993,7 +995,7 @@
       filename="gz-sim-joint-position-controller-system" name="gz::sim::systems::JointPositionController">
       <joint_name>motor_1_joint</joint_name>
       <sub_topic>servo_5</sub_topic>
-      <p_gain>100</p_gain>
+      <p_gain>2.66667</p_gain>
       <i_gain>0</i_gain>
       <d_gain>0</d_gain>
       <i_max>0.0</i_max>
