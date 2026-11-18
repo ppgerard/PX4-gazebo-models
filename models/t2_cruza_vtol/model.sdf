@@ -658,7 +658,7 @@
           <upper>0.78</upper>
         </limit>
         <dynamics>
-          <damping>1.000</damping>
+          <damping>0.1</damping>
         </dynamics>
       </axis>
       <physics>
@@ -678,7 +678,7 @@
           <upper>0.78</upper>
         </limit>
         <dynamics>
-          <damping>1.000</damping>
+          <damping>0.1</damping>
         </dynamics>
       </axis>
       <physics>
@@ -698,7 +698,7 @@
           <upper>0.78</upper>
         </limit>
         <dynamics>
-          <damping>1.000</damping>
+          <damping>0.1</damping>
         </dynamics>
       </axis>
       <physics>
@@ -719,7 +719,7 @@
           <upper>0.78</upper>
         </limit>
         <dynamics>
-          <damping>1.000</damping>
+          <damping>0.1</damping>
         </dynamics>
       </axis>
       <physics>
@@ -784,43 +784,59 @@
          the tail surfaces are placed at the rear of the measured fuselage. -->
     <plugin filename="libBodyAero.so" name="px4_gz_plugins::BodyAero">
       <link_name>base_link</link_name>
-      <cda>0.045 0.178 0.100</cda>
+      <cda>0.025 0.178 0.100</cda>
       <cp_drag_x>0 0 0</cp_drag_x>
-      <cp_drag_y>0 0 0</cp_drag_y>
       <cp_drag_z>0 0 0</cp_drag_z>
       <air_density>1.2041</air_density>
       <topic>/t2/body_aero</topic>
-
-      <!-- Wing, split into halves. area = 0.264/2, AR = 5.45 (memoire 7.3.2,
-           table "Parametres du modele aerodynamique": measured on the vehicle).
-           WAS 0.547/2 with AR 2.84 back-computed from that wrong area.
-           cd0 0.030 is the wing profile drag the old block implied
-           (cda*a0 = 0.6417*0.05984 = 0.0384) rounded down, since the fuselage
-           share of that is in <cda> above. -->
-      <surface><name>left_wing</name>
-        <area>0.132</area><a0>0.05984281113</a0><cla>4.752798721</cla>
+      <cp_drag_y>-0.05 0 0</cp_drag_y>
+    <!-- plant v3 -->
+      <inflow_correction>true</inflow_correction>
+      <prop_diameter>0.254</prop_diameter><prop_j0>0.72</prop_j0><prop_ja>0.25</prop_ja>
+      <surface><name>left_wing_in</name>
+        <area>0.066</area><a0>0.05984281113</a0><cla>4.752798721</cla>
         <alpha_stall>0.3391428111</alpha_stall>
-        <cd0>0.030</cd0><ar>5.45</ar><eff>0.85</eff>
-        <cp>0 0 0</cp>
-        <forward>1 0 0</forward><upward>0 0 1</upward></surface>
-      <surface><name>right_wing</name>
-        <area>0.132</area><a0>0.05984281113</a0><cla>4.752798721</cla>
+        <cd0>0.03</cd0><ar>5.45</ar><eff>0.85</eff><cd90>1.3</cd90>
+        <cp>0.03 0.155 0</cp>
+        <forward>1 0 0</forward><upward>0 0 1</upward>
+        <slipstream_rotor>rotor_1</slipstream_rotor><slipstream_fraction>0.72</slipstream_fraction></surface>
+      <surface><name>left_wing_out</name>
+        <area>0.066</area><a0>0.05984281113</a0><cla>4.752798721</cla>
         <alpha_stall>0.3391428111</alpha_stall>
-        <cd0>0.030</cd0><ar>5.45</ar><eff>0.85</eff>
-        <cp>0 0 0</cp>
-        <forward>1 0 0</forward><upward>0 0 1</upward></surface>
+        <cd0>0.03</cd0><ar>5.45</ar><eff>0.85</eff><cd90>1.3</cd90>
+        <cp>0.03 0.466 0</cp>
+        <forward>1 0 0</forward><upward>0 0 1</upward>
+        <control_joint>left_elevon_joint</control_joint><control_eff>-0.5</control_eff>
+        <slipstream_rotor>rotor_1</slipstream_rotor><slipstream_fraction>0.10</slipstream_fraction></surface>
+      <surface><name>right_wing_in</name>
+        <area>0.066</area><a0>0.05984281113</a0><cla>4.752798721</cla>
+        <alpha_stall>0.3391428111</alpha_stall>
+        <cd0>0.03</cd0><ar>5.45</ar><eff>0.85</eff><cd90>1.3</cd90>
+        <cp>0.03 -0.155 0</cp>
+        <forward>1 0 0</forward><upward>0 0 1</upward>
+        <slipstream_rotor>rotor_0</slipstream_rotor><slipstream_fraction>0.72</slipstream_fraction></surface>
+      <surface><name>right_wing_out</name>
+        <area>0.066</area><a0>0.05984281113</a0><cla>4.752798721</cla>
+        <alpha_stall>0.3391428111</alpha_stall>
+        <cd0>0.03</cd0><ar>5.45</ar><eff>0.85</eff><cd90>1.3</cd90>
+        <cp>0.03 -0.466 0</cp>
+        <forward>1 0 0</forward><upward>0 0 1</upward>
+        <control_joint>right_elevon_joint</control_joint><control_eff>-0.5</control_eff>
+        <slipstream_rotor>rotor_0</slipstream_rotor><slipstream_fraction>0.10</slipstream_fraction></surface>
       <surface><name>elevator</name>
-        <area>0.0247</area><a0>-0.2</a0><cla>4.752798721</cla>
+        <area>0.0247</area><a0>0.0</a0><cla>4.752798721</cla>
         <alpha_stall>0.3391428111</alpha_stall>
-        <cd0>0.020</cd0><ar>4.0</ar><eff>0.85</eff>
-        <cp>0 0 0</cp>
-        <forward>1 0 0</forward><upward>0 0 1</upward></surface>
+        <cd0>0.02</cd0><ar>4.0</ar><eff>0.85</eff><cd90>1.25</cd90>
+        <cp>-0.63 0 0</cp>
+        <forward>1 0 0</forward><upward>0 0 1</upward>
+        <control_joint>elevator_joint</control_joint><control_eff>-0.6</control_eff></surface>
       <surface><name>rudder</name>
         <area>0.0185</area><a0>0.0</a0><cla>4.752798721</cla>
         <alpha_stall>0.3391428111</alpha_stall>
-        <cd0>0.020</cd0><ar>2.4</ar><eff>0.85</eff>
-        <cp>0 0 0</cp>
-        <forward>1 0 0</forward><upward>0 1 0</upward></surface>
+        <cd0>0.02</cd0><ar>2.4</ar><eff>0.85</eff><cd90>1.2</cd90>
+        <cp>-0.62 0 0.05</cp>
+        <forward>1 0 0</forward><upward>0 1 0</upward>
+        <control_joint>rudder_joint</control_joint><control_eff>0.6</control_eff></surface>
     </plugin>
 
     <!-- DISABLED: superseded by px4_gz_plugins::BodyAero below.
@@ -853,6 +869,11 @@
       filename="gz-sim-joint-position-controller-system" name="gz::sim::systems::JointPositionController">
       <joint_name>left_elevon_joint</joint_name>
       <sub_topic>servo_0</sub_topic>
+      <p_gain>2.5</p_gain>
+      <i_gain>0</i_gain>
+      <d_gain>0</d_gain>
+      <cmd_max>2</cmd_max>
+      <cmd_min>-2</cmd_min>
     </plugin>
     <!-- DISABLED: superseded by px4_gz_plugins::BodyAero below.
          LiftDrag returns early on `forwardI.Dot(vel) <= 0`, so these
@@ -884,6 +905,11 @@
       filename="gz-sim-joint-position-controller-system" name="gz::sim::systems::JointPositionController">
       <joint_name>right_elevon_joint</joint_name>
       <sub_topic>servo_1</sub_topic>
+      <p_gain>2.5</p_gain>
+      <i_gain>0</i_gain>
+      <d_gain>0</d_gain>
+      <cmd_max>2</cmd_max>
+      <cmd_min>-2</cmd_min>
     </plugin>
     <!-- DISABLED: superseded by px4_gz_plugins::BodyAero below.
          LiftDrag returns early on `forwardI.Dot(vel) <= 0`, so these
@@ -915,6 +941,11 @@
       filename="gz-sim-joint-position-controller-system" name="gz::sim::systems::JointPositionController">
       <joint_name>elevator_joint</joint_name>
       <sub_topic>servo_2</sub_topic>
+      <p_gain>2.5</p_gain>
+      <i_gain>0</i_gain>
+      <d_gain>0</d_gain>
+      <cmd_max>2</cmd_max>
+      <cmd_min>-2</cmd_min>
     </plugin>
     <!-- DISABLED: superseded by px4_gz_plugins::BodyAero below.
          LiftDrag returns early on `forwardI.Dot(vel) <= 0`, so these
@@ -945,13 +976,18 @@
       filename="gz-sim-joint-position-controller-system" name="gz::sim::systems::JointPositionController">
       <joint_name>rudder_joint</joint_name>
       <sub_topic>servo_3</sub_topic>
+      <p_gain>2.5</p_gain>
+      <i_gain>0</i_gain>
+      <d_gain>0</d_gain>
+      <cmd_max>2</cmd_max>
+      <cmd_min>-2</cmd_min>
     </plugin>
     <plugin filename="gz-sim-multicopter-motor-model-system" name="gz::sim::systems::MulticopterMotorModel">
       <jointName>rotor_0_joint</jointName>
       <linkName>rotor_0</linkName>
       <turningDirection>ccw</turningDirection>
-      <timeConstantUp>0.0125</timeConstantUp>
-      <timeConstantDown>0.025</timeConstantDown>
+      <timeConstantUp>0.0363</timeConstantUp>
+      <timeConstantDown>0.0725</timeConstantDown>
       <maxRotVelocity>1139</maxRotVelocity>
       <motorConstant>1.6e-05</motorConstant>
       <momentConstant>0.018</momentConstant>
@@ -971,16 +1007,16 @@
       <d_gain>0</d_gain>
       <i_max>0.0</i_max>
       <i_min>0.0</i_min>
-      <cmd_max>2</cmd_max>
-      <cmd_min>-2</cmd_min>
+      <cmd_max>0.838</cmd_max>
+      <cmd_min>-0.838</cmd_min>
       <err_max>0.2</err_max>
     </plugin>
     <plugin filename="gz-sim-multicopter-motor-model-system" name="gz::sim::systems::MulticopterMotorModel">
       <jointName>rotor_1_joint</jointName>
       <linkName>rotor_1</linkName>
       <turningDirection>cw</turningDirection>
-      <timeConstantUp>0.0125</timeConstantUp>
-      <timeConstantDown>0.025</timeConstantDown>
+      <timeConstantUp>0.0363</timeConstantUp>
+      <timeConstantDown>0.0725</timeConstantDown>
       <maxRotVelocity>1139</maxRotVelocity>
       <motorConstant>1.6e-05</motorConstant>
       <momentConstant>0.018</momentConstant>
@@ -1000,16 +1036,16 @@
       <d_gain>0</d_gain>
       <i_max>0.0</i_max>
       <i_min>0.0</i_min>
-      <cmd_max>2</cmd_max>
-      <cmd_min>-2</cmd_min>
+      <cmd_max>0.838</cmd_max>
+      <cmd_min>-0.838</cmd_min>
       <err_max>0.2</err_max>
     </plugin>
     <plugin filename="gz-sim-multicopter-motor-model-system" name="gz::sim::systems::MulticopterMotorModel">
       <jointName>rotor_2_joint</jointName>
       <linkName>rotor_2</linkName>
       <turningDirection>ccw</turningDirection>
-      <timeConstantUp>0.0125</timeConstantUp>
-      <timeConstantDown>0.025</timeConstantDown>
+      <timeConstantUp>0.0363</timeConstantUp>
+      <timeConstantDown>0.0725</timeConstantDown>
       <maxRotVelocity>1139</maxRotVelocity>
       <motorConstant>1.6e-05</motorConstant>
       <momentConstant>0.018</momentConstant>
