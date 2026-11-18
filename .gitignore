@@ -1,1 +1,10 @@
 sdf_parsing/build/
+
+# Local working copies kept by the simulation harnesses
+*.pristine
+*.pristine.*
+*.bak-*
+*.plantv*
+*.cgfix
+*.cgorigin
+__pycache__/
