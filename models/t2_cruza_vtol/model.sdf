@@ -789,20 +789,22 @@
       <air_density>1.2041</air_density>
       <topic>/t2/body_aero</topic>
 
-      <!-- Wing, split into halves. area = 0.547/2, AR = span^2/area = 2.84,
+      <!-- Wing, split into halves. area = 0.264/2, AR = 5.45 (memoire 7.3.2,
+           table "Parametres du modele aerodynamique": measured on the vehicle).
+           WAS 0.547/2 with AR 2.84 back-computed from that wrong area.
            cd0 0.030 is the wing profile drag the old block implied
            (cda*a0 = 0.6417*0.05984 = 0.0384) rounded down, since the fuselage
            share of that is in <cda> above. -->
       <surface><name>left_wing</name>
-        <area>0.2736</area><a0>0.05984281113</a0><cla>4.752798721</cla>
+        <area>0.132</area><a0>0.05984281113</a0><cla>4.752798721</cla>
         <alpha_stall>0.3391428111</alpha_stall>
-        <cd0>0.030</cd0><ar>2.84</ar><eff>0.85</eff>
+        <cd0>0.030</cd0><ar>5.45</ar><eff>0.85</eff>
         <cp>0 0 0</cp>
         <forward>1 0 0</forward><upward>0 0 1</upward></surface>
       <surface><name>right_wing</name>
-        <area>0.2736</area><a0>0.05984281113</a0><cla>4.752798721</cla>
+        <area>0.132</area><a0>0.05984281113</a0><cla>4.752798721</cla>
         <alpha_stall>0.3391428111</alpha_stall>
-        <cd0>0.030</cd0><ar>2.84</ar><eff>0.85</eff>
+        <cd0>0.030</cd0><ar>5.45</ar><eff>0.85</eff>
         <cp>0 0 0</cp>
         <forward>1 0 0</forward><upward>0 0 1</upward></surface>
       <surface><name>elevator</name>
@@ -948,9 +950,9 @@
       <turningDirection>ccw</turningDirection>
       <timeConstantUp>0.0125</timeConstantUp>
       <timeConstantDown>0.025</timeConstantDown>
-      <maxRotVelocity>1500</maxRotVelocity>
+      <maxRotVelocity>1139</maxRotVelocity>
       <motorConstant>1.6e-05</motorConstant>
-      <momentConstant>0.05</momentConstant>
+      <momentConstant>0.018</momentConstant>
       <commandSubTopic>command/motor_speed</commandSubTopic>
       <motorNumber>0</motorNumber>
       <rotorDragCoefficient>0.0000806428</rotorDragCoefficient>
@@ -977,9 +979,9 @@
       <turningDirection>cw</turningDirection>
       <timeConstantUp>0.0125</timeConstantUp>
       <timeConstantDown>0.025</timeConstantDown>
-      <maxRotVelocity>1500</maxRotVelocity>
+      <maxRotVelocity>1139</maxRotVelocity>
       <motorConstant>1.6e-05</motorConstant>
-      <momentConstant>0.05</momentConstant>
+      <momentConstant>0.018</momentConstant>
       <commandSubTopic>command/motor_speed</commandSubTopic>
       <motorNumber>2</motorNumber>
       <rotorDragCoefficient>0.0000806428</rotorDragCoefficient>
@@ -1006,9 +1008,9 @@
       <turningDirection>ccw</turningDirection>
       <timeConstantUp>0.0125</timeConstantUp>
       <timeConstantDown>0.025</timeConstantDown>
-      <maxRotVelocity>1500</maxRotVelocity>
+      <maxRotVelocity>1139</maxRotVelocity>
       <motorConstant>1.6e-05</motorConstant>
-      <momentConstant>0.05</momentConstant>
+      <momentConstant>0.018</momentConstant>
       <commandSubTopic>command/motor_speed</commandSubTopic>
       <motorNumber>1</motorNumber>
       <rotorDragCoefficient>0.0000806428</rotorDragCoefficient>
